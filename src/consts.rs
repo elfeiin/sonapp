@@ -1,0 +1,1 @@
+pub const BYTE_SEND_DURATION_MS: u64 = 5;
