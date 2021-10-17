@@ -1,7 +1,6 @@
-use rodio::cpal;
-use rodio::Device;
-use rodio::cpal::traits::HostTrait;
-use rodio::{source::Source, Decoder, OutputStream};
+use cpal::traits::HostTrait;
+use rodio::DeviceTrait;
+use rodio::{source::Source, Decoder, InputDevices, OutputStream};
 use std::collections::HashMap;
 use std::f64::consts::TAU;
 use std::io::Write;
@@ -15,41 +14,29 @@ mod consts;
 use consts::*;
 
 fn main() {
-	// let host = cpal::default_host();
-	
-	// let mut the_device = None;
-	
-	// let select = 2;
-	
-	// for (i, device) in host.output_devices().unwrap().enumerate() {
-	// 	the_device = Some(device);
-	// 	if i == select {
-	// 		break;
-	// 	}
-	// }
-	
-	// let device = if let Some(device) = the_device {
-	// 	device
-	// } else {
-	// 	return;
-	// };
-	
-	// Get a output stream handle to the default physical sound device
-	let (stream, stream_handle) = OutputStream::try_default().unwrap();
-	
-	
+	// A frequency generator. Can play many frequencies at once.
 	let freq_gen = Arc::new(Mutex::new(FrequencyGenerator::new(44000.0)));
-
-	let speaker = Speaker::new(freq_gen.clone());
-
-	// Play the sound directly on the device
-	stream_handle.play_raw(speaker.convert_samples()).unwrap();
-
-	let mut modulator = Modulator::new(FreqRange::new(440.0, 20.0), freq_gen.clone());
 	
-	modulator.write_all(b"Some really long text that I just thought of just now.").unwrap();
+	// The thing that plays sound from FrequencyGenerator.
+	let speaker = Speaker::new(freq_gen.clone());
+	
+	let host = cpal::default_host();
+	
+	let devices = host.output_devices().unwrap();
+	
+	for device in devices {
+		println!["{}", device.name().unwrap()];
+	}
+	
+	// let mut stream = Stream::new(ctx, name, ss, map)
+	
+	// Modify freq_gen to play certain stuffs.
+	let mut modulator = Modulator::new(FreqRange::new(880.0, 20.0), freq_gen);
 
-	// The sound plays in a separate audio thread,
-	// so we need to keep the main thread alive while it's playing.
-	// std::thread::sleep(std::time::Duration::from_secs(30));
+	// Write data to our freq gen to be played by the speaker.
+	modulator
+		.write_all(b"Hello Able!")
+		.unwrap();
+
+	std::thread::sleep(std::time::Duration::from_secs(30));
 }
